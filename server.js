@@ -70,7 +70,9 @@ app.post('/eliminar/:id', (req, res) => {
   fs.writeFileSync('./data/bicicletas.json', JSON.stringify(bicicletas, null, 2));
   res.redirect('/admin');
 });
-
+app.get('/', (req, res) => {
+  res.redirect('/public/index.html');
+});
 // Servidor en línea
 app.listen(PORT, () => {
   console.log(`Servidor funcionando en http://localhost:${PORT}`);
