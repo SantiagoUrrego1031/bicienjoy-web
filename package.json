@@ -1,0 +1,16 @@
+{
+  "name": "bicienjoy-web",
+  "version": "1.0.0",
+  "description": "Sitio web para mostrar bicicletas a la venta",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "author": "Santiago",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^5.1.0",
+    "express-session": "^1.18.1",
+    "multer": "^2.0.1"
+  }
+}
