@@ -4,13 +4,13 @@ const multer = require('multer');
 const path = require('path');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/public', express.static(path.join(__dirname, 'public')));
-app.use('/uploads', express.static('uploads'));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Contraseña de acceso
 const contraseñaAdmin = '1503s';
@@ -27,29 +27,39 @@ app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'bici-admin1031.html'));
 });
 
+// Página principal
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 // Mostrar todas las bicicletas
 app.get('/bicicletas', (req, res) => {
-  const data = fs.readFileSync('./data/bicicletas.json');
-  res.json(JSON.parse(data));
+  try {
+    const data = fs.readFileSync('./data/bicicletas.json');
+    res.json(JSON.parse(data));
+  } catch (error) {
+    console.error('Error leyendo bicicletas:', error);
+    res.status(500).json({ error: 'Error al leer los datos.' });
+  }
 });
 
 // Agregar bicicleta (con verificación de contraseña)
 app.post('/agregar', upload.array('imagenes', 5), (req, res) => {
   try {
-    const { clave } = req.body;
+    const { clave, titulo, descripcion, precio } = req.body;
 
-    if (clave !== '1234') {
+    if (clave !== contraseñaAdmin) {
       return res.status(403).send('Acceso denegado');
     }
 
-    const bicicletas = JSON.parse(fs.readFileSync('./data/bicicletas.json'));
+    const bicicletas = JSON.parse(fs.readFileSync('./data/bicicletas.json', 'utf-8'));
     const nuevasImagenes = req.files.map(file => `/uploads/${file.filename}`);
 
     const nuevaBici = {
       id: Date.now(),
-      titulo: req.body.titulo,
-      descripcion: req.body.descripcion,
-      precio: req.body.precio,
+      titulo,
+      descripcion,
+      precio,
       imagenes: nuevasImagenes,
     };
 
@@ -62,24 +72,26 @@ app.post('/agregar', upload.array('imagenes', 5), (req, res) => {
   }
 });
 
-
 // Eliminar bicicleta (con verificación de contraseña)
 app.post('/eliminar/:id', (req, res) => {
-  const { clave } = req.body;
+  try {
+    const { clave } = req.body;
 
-  if (clave !== contraseñaAdmin) {
-    return res.status(403).send('Acceso denegado');
+    if (clave !== contraseñaAdmin) {
+      return res.status(403).send('Acceso denegado');
+    }
+
+    let bicicletas = JSON.parse(fs.readFileSync('./data/bicicletas.json', 'utf-8'));
+    bicicletas = bicicletas.filter(b => b.id != req.params.id);
+    fs.writeFileSync('./data/bicicletas.json', JSON.stringify(bicicletas, null, 2));
+    res.redirect('/admin');
+  } catch (error) {
+    console.error('❌ Error al eliminar bicicleta:', error);
+    res.status(500).send('Error interno del servidor');
   }
+});
 
-  let bicicletas = JSON.parse(fs.readFileSync('./data/bicicletas.json'));
-  bicicletas = bicicletas.filter(b => b.id != req.params.id);
-  fs.writeFileSync('./data/bicicletas.json', JSON.stringify(bicicletas, null, 2));
-  res.redirect('/admin');
-});
-app.get('/', (req, res) => {
-  res.redirect('/public/index.html');
-});
-// Servidor en línea
+// Iniciar servidor
 app.listen(PORT, () => {
-  console.log(`Servidor funcionando en http://localhost:${PORT}`);
+  console.log(`🚴 Servidor funcionando en http://localhost:${PORT}`);
 });
