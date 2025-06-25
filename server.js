@@ -35,27 +35,33 @@ app.get('/bicicletas', (req, res) => {
 
 // Agregar bicicleta (con verificación de contraseña)
 app.post('/agregar', upload.array('imagenes', 5), (req, res) => {
-  const { clave } = req.body;
+  try {
+    const { clave } = req.body;
 
-  if (clave !== contraseñaAdmin) {
-    return res.status(403).send('Acceso denegado');
+    if (clave !== '1234') {
+      return res.status(403).send('Acceso denegado');
+    }
+
+    const bicicletas = JSON.parse(fs.readFileSync('./data/bicicletas.json'));
+    const nuevasImagenes = req.files.map(file => `/uploads/${file.filename}`);
+
+    const nuevaBici = {
+      id: Date.now(),
+      titulo: req.body.titulo,
+      descripcion: req.body.descripcion,
+      precio: req.body.precio,
+      imagenes: nuevasImagenes,
+    };
+
+    bicicletas.push(nuevaBici);
+    fs.writeFileSync('./data/bicicletas.json', JSON.stringify(bicicletas, null, 2));
+    res.redirect('/public/bici-admin1031.html');
+  } catch (error) {
+    console.error('❌ Error al agregar bicicleta:', error);
+    res.status(500).send('Error interno del servidor');
   }
-
-  const bicicletas = JSON.parse(fs.readFileSync('./data/bicicletas.json'));
-  const nuevasImagenes = req.files.map(file => `/uploads/${file.filename}`);
-
-  const nuevaBici = {
-    id: Date.now(),
-    titulo: req.body.titulo,
-    descripcion: req.body.descripcion,
-    precio: req.body.precio,
-    imagenes: nuevasImagenes,
-  };
-
-  bicicletas.push(nuevaBici);
-  fs.writeFileSync('./data/bicicletas.json', JSON.stringify(bicicletas, null, 2));
-  res.redirect('/admin');
 });
+
 
 // Eliminar bicicleta (con verificación de contraseña)
 app.post('/eliminar/:id', (req, res) => {
